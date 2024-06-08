@@ -17,3 +17,17 @@ pub struct MemTable {
     size:     usize,
     max_size: usize
 }
+
+impl MemTable {
+
+    pub fn new(max_size: usize) -> MemTable {
+        MemTable {
+            entries: SkipMap::new(),
+            size: 0,
+            max_size
+        }
+    }
+
+
+
+}
