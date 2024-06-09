@@ -1,80 +1,33 @@
 mod memtable;
 
+use std::net::{TcpListener, TcpStream};
+use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use clap::{Arg, Command};
 use crate::memtable::MemTable;
 
+
+fn client_handler() {
+    println!("Handling request")
+}
+
 fn main() {
-    let matches = Command::new("Key-Value Store")
-        .version("1.0")
-        .author("Your Name <youremail@example.com>")
-        .about("A simple key-value store using LSM tree principles")
-        .subcommand(Command::new("put")
-            .about("Inserts a key-value pair")
-            .arg(Arg::new("key")
-                .help("The key to insert")
-                .required(true)
-                .index(1))
-            .arg(Arg::new("value")
-                .help("The value to insert")
-                .required(true)
-                .index(2)))
-        .subcommand(Command::new("get")
-            .about("Retrieves a value by key")
-            .arg(Arg::new("key")
-                .help("The key to retrieve")
-                .required(true)
-                .index(1)))
-        .subcommand(Command::new("delete")
-            .about("Deletes a key")
-            .arg(Arg::new("key")
-                .help("The key to delete")
-                .required(true)
-                .index(1)))
-        .subcommand(Command::new("scan")
-            .about("Scans a range of keys")
-            .arg(Arg::new("start")
-                .help("The start key of the range")
-                .required(true)
-                .index(1))
-            .arg(Arg::new("end")
-                .help("The end key of the range")
-                .required(true)
-                .index(2)))
+
+    let matches = Command::new("ninja-kv-store")
+        .version("0.1")
+        .author("Shubham Tomar, shubhamtomar1498@gmail.com")
+        .about("A simple KV store based LSM principles")
+        .arg(Arg::new("memtable-max-size")
+            .long("memtable-max-size")
+            .default_value("1000")
+            .help("Maximum size of the MemTable before flushing"))
         .get_matches();
 
-    let mut mem_table = MemTable::new(1000);
+    let memtable_max_size = matches.get_one::<String>("memtable-max-size")
+        .unwrap_or(&"1000".to_string())
+        .parse::<usize>()
+        .unwrap_or(1000);
+    let mem_table = Arc::new(Mutex::new(MemTable::new(memtable_max_size)));
 
-    if let Some(matches) = matches.subcommand_matches("put") {
-        let key = matches.get_one::<String>("key").unwrap().as_bytes().to_vec();
-        let value = matches.get_one::<String>("value").unwrap().as_bytes().to_vec();
-        mem_table.put(key, value);
-        println!("Inserted key-value pair.");
-    }
-
-    if let Some(matches) = matches.subcommand_matches("get") {
-        let key = matches.get_one::<String>("key").unwrap().as_bytes().to_vec();
-        match mem_table.get(&key) {
-            Some(entry) if !entry.deleted => println!("Value: {:?}", entry.value),
-            _ => println!("Key not found or marked as deleted."),
-        }
-    }
-
-    if let Some(matches) = matches.subcommand_matches("delete") {
-        let key = matches.get_one::<String>("key").unwrap().as_bytes().to_vec();
-        mem_table.delete(&key);
-        println!("Key deleted.");
-    }
-
-    // if let Some(matches) = matches.subcommand_matches("scan") {
-    //     let start = matches.get_one::<String>("start").unwrap().as_bytes().to_vec();
-    //     let end = matches.get_one::<String>("end").unwrap().as_bytes().to_vec();
-        // let scan_result = mem_table.range_scan(&start, &end);
-        // for (key, entry) in scan_result {
-        //     if !entry.deleted {
-        //         println!("{:?}: {:?}", key, entry.value);
-        //     } else {
-        //         println!("{:?} is deleted", key);
-        //     }
-        // }
-    // }
 }
